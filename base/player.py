@@ -1,6 +1,7 @@
 import discord
 from discord import VoiceChannel, VoiceClient, TextChannel
 from enum import Enum
+import asyncio
 
 class PlayerState(Enum):
     WAITING = 0
@@ -15,7 +16,6 @@ class Player():
         self.ffmpeg_options: dict[str, any] = ffmpeg_options
         #list with audio titles and urls
         self.queue: list[tuple[str, str]] = []
-        #self.state: PlayerState = PlayerState.WAITING
 
     async def print_info_to_channel(self, text: str) -> None:
         if self.text_channel == None:
@@ -56,15 +56,15 @@ class Player():
             await self.vclient.move_to(self.vchannel)
         return (True, "Bot connected to channel.")
 
-    async def play_next_sound(self) -> tuple[bool, str] | None:
-        if len(self.queue) == 0:
-            return (False, "Sound queue is empty.")
+    def play_next_sound(self) -> tuple[bool, str] | None:
         if self.vclient.is_playing(): 
             self.vclient.stop()
+        if len(self.queue) == 0:
+            return (False, "Sound queue is empty.")
         sound_obj = self.queue.pop(0)
         sound_title = sound_obj[0]
         sound_url = sound_obj[1]
-        await self.print_info_to_channel(f'Now playing {sound_title}.')
+        #self.print_info_to_channel(f'Now playing {sound_title}.')
         self.vclient.play(discord.FFmpegPCMAudio(sound_url, **self.ffmpeg_options), after=lambda e: self.play_next_sound())
 
     async def play(self) -> None:
@@ -78,7 +78,10 @@ class Player():
         self.play_next_sound()
     
     async def skip(self) -> None:
-        await self.play_next_sound()
+        if len(self.queue) == 0:
+            self.vclient.stop()
+            return
+        self.play_next_sound()
     
     async def clear(self):
         if self.vclient != None and self.vclient.is_playing():
@@ -90,11 +93,3 @@ class Player():
         await self.clear()
         await self.vclient.disconnect()
         await self.print_info_to_channel("Bot leaved the channel.")
-
-    
-
-    
-
-
-        
-        
