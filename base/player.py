@@ -1,7 +1,6 @@
 import discord
 from discord import VoiceChannel, VoiceClient, TextChannel
 from enum import Enum
-import asyncio
 
 class PlayerState(Enum):
     WAITING = 0
